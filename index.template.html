@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日本で震度1以上を観測した地震の回数（1990〜{{END_YEAR}}年）</title>
+<meta name="description" content="気象庁の震度データベースから、1990〜{{END_YEAR}}年に日本で震度1以上を観測した地震の回数と、最大震度6弱以上の地震の震央を表と地図で示します。">
+<style>
+:root{
+  --font-anthropic-sans:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+  --font-anthropic-serif:"Hiragino Mincho ProN","Noto Serif JP","Yu Mincho",serif;
+  --color-fg:#1f2328;--color-fg-muted:#5d6670;--color-bg:#ffffff;--color-panel:#f7f8fa;--color-border-line:#dfe3e8;
+  --color-ok:#2e7d32;--color-warn:#c27c00;--color-bad:#c0392b;
+  --cds-font-size-caption:12.5px;--cds-font-size-body:15px;--cds-font-size-heading:18px;--cds-font-size-title:26px;--cds-font-weight-medium:600;
+  --cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:12px;--cds-gap-lg:20px;--cds-gap-xl:28px;
+  --cds-pad-xs:4px;--cds-pad-sm:8px;--cds-pad-md:12px;--cds-pad-lg:18px;--cds-pad-xl:26px;--cds-radius:8px;
+  --cds-chart-muted:#8f99a3;--cds-chart-grid:#e8ebee;--cds-chart-axis:#b4bcc4;--cds-chart-reference:#7d8790;--cds-chart-status-critical:#c0392b;
+  --cds-text-secondary:#5d6670;--cds-surface-popover:#ffffff;--cds-border:#d4d9de;--cds-shadow-popover:0 4px 14px rgba(0,0,0,.12);
+  --series-1:#3b6ea8;
+}
+@media (prefers-color-scheme: dark){:root{
+  --color-fg:#e6e8eb;--color-fg-muted:#a4adb6;--color-bg:#15181c;--color-panel:#1d2126;--color-border-line:#333a42;
+  --color-warn:#e0a030;--color-bad:#e5604f;
+  --cds-chart-muted:#7c8792;--cds-chart-grid:#2b3138;--cds-chart-axis:#4a535c;--cds-chart-reference:#8d97a1;
+  --cds-text-secondary:#a4adb6;--cds-surface-popover:#22272d;--cds-border:#3a424b;--cds-shadow-popover:0 4px 14px rgba(0,0,0,.5);
+  --series-1:#6f9fd6;
+}}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg)}
+#dash-root{max-width:1100px;margin:0 auto;padding:24px 16px 8px;font-family:var(--font-anthropic-sans);font-size:var(--cds-font-size-body);line-height:1.6}
+.site-foot{max-width:1100px;margin:0 auto;padding:8px 16px 32px;font-family:var(--font-anthropic-sans);font-size:12.5px;line-height:1.7;color:var(--color-fg-muted)}
+.site-foot a{color:inherit}
+.dash-select{font:inherit;font-size:12.5px;padding:3px 6px;border:1px solid var(--color-border-line);border-radius:6px;background:var(--color-bg);color:var(--color-fg)}
+</style>
+<link rel="canonical" href="https://yoshihiro-kitajima.github.io/japan-earthquakes/">
+<meta property="og:title" content="日本で震度1以上を観測した地震の回数（1990〜{{END_YEAR}}年）">
+<meta property="og:description" content="気象庁の震度データベースから、1990〜{{END_YEAR}}年に日本で震度1以上を観測した地震の回数と、最大震度6弱以上の地震の震央を表と地図で示します。">
+<meta property="og:url" content="https://yoshihiro-kitajima.github.io/japan-earthquakes/">
+<meta property="og:type" content="website">
+<script src="d3.min.js"></script>
+<script src="dash.js"></script>
+</head>
+<body>
+<div id="dash-root" lang="ja">
+<style>
+.eq{font-family:var(--font-anthropic-sans);color:var(--color-fg);display:flex;flex-direction:column;gap:var(--cds-gap-lg)}
+.eq h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);margin:0;line-height:1.3}
+.eq h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0 0 var(--cds-gap-sm)}
+.eq .lead{font-size:var(--cds-font-size-body);line-height:1.8;margin:0}
+.eq .lead b{font-variant-numeric:tabular-nums}
+.eq .muted{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.eq .card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg)}
+.eq .chart{position:relative;min-height:300px}
+.eq .chart svg text{fill:var(--cds-text-secondary);font-size:var(--cds-font-size-caption);font-family:var(--font-anthropic-sans)}
+.eq .chart .s7lab{fill:var(--color-bad)}
+.eq .tip{position:absolute;pointer-events:none;background:var(--cds-surface-popover);border:1px solid var(--cds-border);box-shadow:var(--cds-shadow-popover);border-radius:var(--cds-radius);padding:var(--cds-pad-sm) var(--cds-pad-md);font-size:var(--cds-font-size-caption);line-height:1.6;white-space:nowrap;z-index:2}
+.eq .tip b{font-variant-numeric:tabular-nums}
+.eq .legend{display:flex;flex-wrap:wrap;gap:var(--cds-gap-md);margin-top:var(--cds-gap-sm)}
+.eq .legend i{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px;border-radius:2px}
+.eq .tablewrap{overflow-x:auto}
+.eq table{border-collapse:collapse;width:100%;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.eq th,.eq td{border-bottom:1px solid var(--color-border-line);padding:6px 8px;vertical-align:top}
+.eq thead th{position:sticky;top:0;background:var(--color-panel);font-weight:var(--cds-font-weight-medium);white-space:nowrap}
+.eq thead tr.grp th{border-bottom:none;color:var(--color-fg-muted);font-weight:400}
+.eq td.n,.eq th.n{text-align:right;white-space:nowrap}
+.eq td.zero{color:var(--color-fg-muted)}
+.eq td.strong{font-weight:var(--cds-font-weight-medium)}
+.eq td.tot{font-weight:var(--cds-font-weight-medium)}
+.eq td.yr{white-space:nowrap;font-weight:var(--cds-font-weight-medium)}
+.eq td.big{min-width:300px;font-size:var(--cds-font-size-caption)}
+.eq td.big div{margin:0 0 2px}
+.eq td.big .nm{font-weight:var(--cds-font-weight-medium)}
+.eq td.big .i7{color:var(--color-bad);font-weight:var(--cds-font-weight-medium)}
+.eq details{font-size:var(--cds-font-size-caption);line-height:1.8;color:var(--color-fg-muted)}
+.eq details summary{cursor:pointer;color:var(--color-fg)}
+.eq details ul{margin:var(--cds-gap-sm) 0 0;padding-left:1.4em}
+.eq .map{position:relative;min-height:300px}
+.eq .map svg{user-select:none;-webkit-user-select:none}
+.eq [hidden]{display:none !important}
+.eq .mapctl{display:flex;flex-wrap:wrap;align-items:center;gap:var(--cds-gap-sm);margin:0 0 var(--cds-gap-sm)}
+.eq .mapctl button{font:inherit;font-size:var(--cds-font-size-caption);padding:5px 10px;border:1px solid var(--color-border-line);background:var(--color-bg);color:var(--color-fg);border-radius:var(--cds-radius);cursor:pointer}
+.eq .mapctl .seg{display:inline-flex;gap:0}
+.eq .mapctl .seg button:first-child{border-radius:var(--cds-radius) 0 0 var(--cds-radius)}
+.eq .mapctl .seg button:last-child{border-radius:0 var(--cds-radius) var(--cds-radius) 0;border-left:none}
+.eq .mapctl button[aria-pressed=true]{background:var(--color-fg);color:var(--color-bg)}
+.eq .mapctl input[type=range]{width:min(360px,60%)}
+.eq .mapctl label{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.eq .mapctl .mapyear{font-size:var(--cds-font-size-body);font-variant-numeric:tabular-nums}
+[data-dash-source-state=refreshing]{opacity:.5}
+</style>
+<div class="eq">
+  <header id="top">
+    <h1>日本で震度1以上を観測した地震の回数（1990〜{{END_YEAR}}年）</h1>
+    <p class="lead" id="takeaway">1990年1月1日から<span data-draw="through" data-source="yearly" data-field="period" data-where="year={{END_YEAR}}">—</span>までに、日本で震度1以上を観測した地震は<b data-draw="total" data-source="summary" data-field="total" data-row="0">—</b>回でした。いちばん多かった年は<b data-draw="maxyear" data-source="summary" data-field="max_year" data-row="0">—</b>年の<b data-draw="maxcount" data-source="summary" data-field="max_count" data-row="0">—</b>回です。このうち最大震度6弱以上の大きな地震は<b data-draw="bigcount" data-source="summary" data-field="big_count" data-row="0">—</b>回ありました。</p>
+    <p class="muted">出典：気象庁「震度データベース検索」。地震の回数は、その地震で観測されたいちばん大きな震度（最大震度）で分けて数えています。余震も1回ずつ数えます。{{END_YEAR}}年は途中までの数です。</p>
+  </header>
+
+  <section class="card" id="chart-section">
+    <h2 id="chart-title">年ごとの回数（震度1以上）</h2>
+    <div class="chart" id="year-chart" data-draw="chart" data-source="yearly"></div>
+    <div class="legend muted"><span><i style="background:var(--cds-chart-muted)" data-draw="swatch"></i>その年に震度1以上を観測した地震の回数</span><span><b style="color:var(--color-bad)">▲震度7</b>　震度7を観測した地震があった年</span><span>┆ 破線：1997年11月から、地方公共団体などの震度計のデータも使われるようになった時期</span></div>
+    <p class="muted">棒にふれる（タップする）と、その年の最大震度別の回数が出ます。棒を押すと、下の地図がその年までの表示に変わります。</p>
+  </section>
+
+  <section class="card" id="map-section">
+    <h2 id="map-title">大きな地震（最大震度6弱以上）が起きた場所</h2>
+    <div class="mapctl" id="map-controls">
+      <span class="seg" role="group" aria-label="点の色"><button type="button" id="mode-int" aria-pressed="true">最大震度で色分け</button><button type="button" id="mode-year" aria-pressed="false">年代で色分け</button><button type="button" id="mode-depth" aria-pressed="false">深さで色分け</button></span>
+      <span class="seg" role="group" aria-label="地図の拡大"><button type="button" id="map-zin" aria-label="拡大">＋</button><button type="button" id="map-zout" aria-label="縮小">−</button><button type="button" id="map-zreset">全体</button></span>
+      <button type="button" id="map-play">▶ 1990年から順に再生（くり返し）</button><button type="button" id="map-stop" hidden>■ 止める</button>
+      <label class="spd">速さ <select class="dash-select" id="map-speed" aria-label="再生の速さ"><option value="1400">ゆっくり（1年1.4秒）</option><option value="700" selected>ふつう（1年0.7秒）</option><option value="300">速い（1年0.3秒）</option></select></label>
+      <b class="mapyear" data-draw="mapyear">—</b>
+    </div>
+    <div class="mapctl" id="map-slider-row">
+      <label for="map-year-slider">年を選ぶ</label>
+      <input type="range" id="map-year-slider" min="1990" max="{{END_YEAR}}" step="1" value="{{END_YEAR}}">
+      <button type="button" id="map-all">すべての年</button>
+    </div>
+    <div class="map" id="quake-map" data-draw="map" data-source="big land"></div>
+    <div class="legend muted" id="map-legend">
+      <span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="4" style="fill:var(--color-warn);fill-opacity:.85"></circle></svg>最大震度6弱（1996年9月までは震度6）</span>
+      <span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" style="fill:color-mix(in srgb, var(--color-warn), var(--color-bad));fill-opacity:.85"></circle></svg>最大震度6強</span>
+      <span><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="7" style="fill:var(--color-bad);fill-opacity:.85"></circle></svg>最大震度7</span>
+    </div>
+    <div class="legend muted" id="map-yearlegend" hidden>
+      <span>色：起きた年（1990年→{{END_YEAR}}年）</span>
+      <span class="yl" data-draw="mapyearlegend"></span>
+      <span>点の大きさ：最大震度（小 6弱・旧階級の6、中 6強、大 7）</span>
+    </div>
+    <div class="legend muted" id="map-depthlegend" hidden>
+      <span>色：震源の深さ</span>
+      <span class="dl" data-draw="mapdepthlegend"></span>
+      <span>点の大きさ：最大震度（小 6弱・旧階級の6、中 6強、大 7）</span>
+    </div>
+    <p class="muted">再生すると、1990年から1年ずつ、その年までに起きた大きな地震の点が増えていきます。その年の点は濃く、前の年の点はうすく表示します。{{END_YEAR}}年まで進んだら、少し止まってから1990年にもどってくり返します。</p>
+    <p class="muted">「年を選ぶ」のつまみを動かすと、その年までの地図で止めて見られます（その年の地震は濃い点）。「すべての年」で全期間の表示にもどります。</p>
+    <p class="muted">地図は「＋」「−」ボタンで拡大・縮小できます（パソコンではCtrlキーを押しながらホイール、スマホでは2本指でも拡大できます）。拡大したあとはドラッグで動かせます。「全体」で元の大きさにもどります。</p>
+    <p class="muted">点は震央（震源の真上の地表の位置）です。海で起きた地震は海の上に点があります。点にふれる（タップする）と、日時・震央地名・マグニチュード・深さ・最大震度が出ます。地図の陸地の形は Natural Earth（1:50m、パブリックドメイン）を使っています。</p>
+  </section>
+<script>
+dash.draw('map', (el) => {
+  const b = dash.data('big'), g = dash.data('land');
+  el.replaceChildren();
+  if (b.status !== 'ok' || g.status !== 'ok' || !g.data || !g.data.features) {
+    el.textContent = b.status === 'error' || g.status === 'error' ? '読み込めませんでした' : '—';
+    return;
+  }
+  const W = Math.max(280, el.clientWidth);
+  const lon0 = 122.5, lon1 = 149.5, lat0 = 24, lat1 = 46.6;
+  const k = Math.cos((36 * Math.PI) / 180);
+  const s = Math.min(W / ((lon1 - lon0) * k), 640 / (lat1 - lat0));
+  const H = Math.round((lat1 - lat0) * s);
+  const ox = (W - (lon1 - lon0) * k * s) / 2;
+  const px = (lon) => ox + (lon - lon0) * k * s;
+  const py = (lat) => (lat1 - lat) * s;
+  const proj = d3.geoTransform({ point(x, y) { this.stream.point(px(x), py(y)); } });
+  const path = d3.geoPath(proj);
+  const svg = d3.select(el).append('svg')
+    .attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('role', 'img')
+    .attr('aria-label', '1990年から{{END_YEAR}}年までに最大震度6弱以上を観測した地震の震央を、日本列島の地図上に最大震度で色分けして示した図');
+  const zg = svg.append('g');
+  zg.append('g').selectAll('path').data(g.data.features).join('path')
+    .attr('d', path)
+    .style('fill', 'var(--cds-chart-muted)').style('fill-opacity', 0.35)
+    .style('stroke', 'var(--cds-chart-axis)').style('stroke-width', 0.6);
+  const order = { '6': 0, '6弱': 0, '6強': 1, '7': 2 };
+  const rr = [4, 5.5, 7];
+  const st = window.eqMap || (window.eqMap = { mode: 'int', playing: false, year: null });
+  const yc = d3.scaleSequential(d3.interpolateViridis).domain([1990, {{END_YEAR}}]);
+  const dc = (km) => d3.interpolateBlues(km < 20 ? 0.35 : km < 40 ? 0.55 : km < 70 ? 0.75 : 0.95);
+  const fill = ['var(--color-warn)', 'color-mix(in srgb, var(--color-warn), var(--color-bad))', 'var(--color-bad)'];
+  const pts = b.data.map((r) => ({ ...r, lv: order[r.max_intensity] ?? 0 }))
+    .sort((p, q) => p.lv - q.lv);
+  const dots = zg.append('g').selectAll('circle').data(pts).join('circle')
+    .attr('cx', (r) => px(+r.lon)).attr('cy', (r) => py(+r.lat))
+    .attr('r', (r) => rr[r.lv])
+    .style('stroke-width', 1);
+  const paint = () => dots
+    .style('fill', (r) => (st.mode === 'year' ? yc(+r.year) : st.mode === 'depth' ? dc(+r.depth_km) : fill[r.lv]))
+    .style('display', (r) => (st.year != null && +r.year > st.year ? 'none' : null))
+    .style('fill-opacity', (r) => (st.year == null ? 0.85 : +r.year === st.year ? 1 : 0.3))
+    .style('stroke', (r) => (st.year != null && +r.year === st.year ? 'var(--color-fg)' : 'var(--color-bg)'));
+  paint();
+  const landPaths = zg.selectAll('path');
+  const applyK = (k) => {
+    dots.attr('r', (r) => rr[r.lv] / k).style('stroke-width', 1 / k);
+    landPaths.style('stroke-width', 0.6 / k);
+    svg.style('touch-action', k > 1 ? 'none' : 'pan-y');
+  };
+  const zoomed = () => st.zoom && st.zoom.k > 1;
+  const zoom = d3.zoom().scaleExtent([1, 12]).extent([[0, 0], [W, H]]).translateExtent([[0, 0], [W, H]])
+    .filter((ev) => (ev.type === 'wheel' ? ev.ctrlKey || ev.metaKey
+      : ev.type.startsWith('touch') ? ev.touches.length >= 2 || zoomed()
+      : !ev.button && (ev.type !== 'mousedown' || zoomed())))
+    .on('zoom', (ev) => { st.zoom = ev.transform; zg.attr('transform', ev.transform); applyK(ev.transform.k); });
+  svg.call(zoom).on('dblclick.zoom', null);
+  if (st.zoomW !== W) { st.zoom = null; st.zoomW = W; }
+  svg.call(zoom.transform, st.zoom || d3.zoomIdentity);
+  window.eqZoom = { by: (f) => svg.call(zoom.scaleBy, f), reset: () => svg.call(zoom.transform, d3.zoomIdentity) };
+  const tip = d3.select(el).append('div').attr('class', 'tip').style('display', 'none');
+  const show = (ev, r) => {
+    tip.node().replaceChildren();
+    tip.append('div').append('b').text(`${r.datetime}　${r.epicenter}`);
+    tip.append('div').text(`M${r.magnitude}　深さ${r.depth_km}km`);
+    tip.append('div').text(r.max_intensity === '6' ? '最大震度6（旧階級）' : `最大震度${r.max_intensity}`);
+    if (r.jma_name) tip.append('div').text(r.jma_name);
+    tip.style('display', 'block');
+    const [mx, my] = d3.pointer(ev, el);
+    const tw = tip.node().offsetWidth, th = tip.node().offsetHeight;
+    tip.style('left', `${Math.min(Math.max(0, mx - tw / 2), el.clientWidth - tw)}px`)
+       .style('top', `${my - th - 12 < 0 ? my + 14 : my - th - 12}px`);
+    dots.style('fill-opacity', (d) => (d === r ? 1 : 0.4));
+  };
+  const hide = () => { tip.style('display', 'none'); paint(); };
+  dots.on('pointerenter pointermove', show).on('pointerleave', hide);
+});
+dash.draw('mapyear', (el) => {
+  const st = window.eqMap || (window.eqMap = { mode: 'int', playing: false, year: null });
+  el.textContent = st.year == null ? '1990〜{{END_YEAR}}年のすべて' : `${st.year}年まで（${st.year}年の地震は濃い点）`;
+});
+dash.draw('mapdepthlegend', (el) => {
+  el.replaceChildren();
+  [['20km未満', 0.35], ['20〜40km', 0.55], ['40〜70km', 0.75], ['70km以上', 0.95]].forEach(([label, t]) => {
+    const s = d3.select(el).append('span').style('margin-right', '10px').style('white-space', 'nowrap');
+    s.append('i').style('display', 'inline-block').style('width', '12px').style('height', '12px').style('border-radius', '50%')
+      .style('vertical-align', '-1px').style('margin-right', '4px').style('background', d3.interpolateBlues(t));
+    s.append('span').text(label);
+  });
+});
+dash.draw('mapyearlegend', (el) => {
+  el.replaceChildren();
+  const W = 260;
+  const svg = d3.select(el).append('svg').attr('width', W).attr('height', 32)
+    .attr('role', 'img').attr('aria-label', '色と年の対応：1990年は濃い紫、{{END_YEAR}}年は黄色');
+  const gr = svg.append('defs').append('linearGradient').attr('id', 'eq-year-grad');
+  d3.range(0, 1.0001, 0.1).forEach((t) => gr.append('stop').attr('offset', t).attr('stop-color', d3.interpolateViridis(t)));
+  svg.append('rect').attr('x', 14).attr('y', 3).attr('width', W - 28).attr('height', 10).attr('fill', 'url(#eq-year-grad)');
+  const x = d3.scaleLinear().domain([1990, {{END_YEAR}}]).range([14, W - 14]);
+  [...new Set([1990, 2000, 2010, 2020, {{END_YEAR}}])].forEach((v) => svg.append('text').attr('x', x(v)).attr('y', 28)
+    .attr('text-anchor', 'middle').style('font-size', '11px').style('fill', 'var(--cds-text-secondary)').text(v));
+});
+</script>
+<script>
+(() => {
+  const st = window.eqMap || (window.eqMap = { mode: 'int', playing: false, year: null });
+  const FIRST = 1990, LAST = {{END_YEAR}};
+  let timer = null, hold = 0;
+  const redraw = () => { dash.draw('map'); dash.draw('mapyear'); sync(); };
+  const each = (sel, f) => document.querySelectorAll(sel).forEach(f);
+  const sync = () => {
+    each('#mode-int', (b) => b.setAttribute('aria-pressed', String(st.mode === 'int')));
+    each('#mode-year', (b) => b.setAttribute('aria-pressed', String(st.mode === 'year')));
+    each('#mode-depth', (b) => b.setAttribute('aria-pressed', String(st.mode === 'depth')));
+    each('#map-depthlegend', (e) => { e.hidden = st.mode !== 'depth'; });
+    each('#map-legend', (e) => { e.hidden = st.mode !== 'int'; });
+    each('#map-yearlegend', (e) => { e.hidden = st.mode !== 'year'; });
+    each('#map-play', (b) => { b.hidden = st.playing; });
+    each('#map-stop', (b) => { b.hidden = !st.playing; });
+    each('#map-year-slider', (s) => { s.value = st.year == null ? LAST : st.year; });
+  };
+  const speed = () => { const s = document.querySelector('#map-speed'); return s ? +s.value || 700 : 700; };
+  const stop = () => { clearInterval(timer); timer = null; st.playing = false; st.year = null; sync(); redraw(); };
+  const tick = () => {
+    if (!document.querySelector('#quake-map')) { stop(); return; }
+    if (st.year == null) st.year = FIRST;
+    else if (st.year >= LAST) { hold += 1; if (hold < 3) return; hold = 0; st.year = FIRST; }
+    else st.year += 1;
+    redraw();
+  };
+  const play = () => { if (timer) return; st.playing = true; st.year = null; hold = 0; tick(); timer = setInterval(tick, speed()); sync(); };
+  const goto = (y) => { st.year = y; hold = 0; sync(); redraw(); };
+  window.eqMapGoto = goto;
+  each('#map-speed', (s) => s.addEventListener('change', () => { if (timer) { clearInterval(timer); timer = setInterval(tick, speed()); } }));
+  each('#map-year-slider', (s) => s.addEventListener('input', () => goto(+s.value)));
+  each('#map-all', (b) => b.addEventListener('click', () => { if (timer) stop(); else goto(null); }));
+  each('#mode-int', (b) => b.addEventListener('click', () => { st.mode = 'int'; sync(); redraw(); }));
+  each('#mode-year', (b) => b.addEventListener('click', () => { st.mode = 'year'; sync(); redraw(); dash.draw('mapyearlegend'); }));
+  each('#mode-depth', (b) => b.addEventListener('click', () => { st.mode = 'depth'; sync(); redraw(); dash.draw('mapdepthlegend'); }));
+  each('#map-play', (b) => b.addEventListener('click', play));
+  each('#map-zin', (b) => b.addEventListener('click', () => { if (window.eqZoom) window.eqZoom.by(1.8); }));
+  each('#map-zout', (b) => b.addEventListener('click', () => { if (window.eqZoom) window.eqZoom.by(1 / 1.8); }));
+  each('#map-zreset', (b) => b.addEventListener('click', () => { if (window.eqZoom) window.eqZoom.reset(); }));
+  each('#map-stop', (b) => b.addEventListener('click', stop));
+  sync();
+})();
+</script>
+
+  <section class="card" id="table-section">
+    <h2 id="table-title">年別・最大震度別の回数と大きな地震（最大震度6弱以上）</h2>
+    <div class="tablewrap">
+      <table id="year-table" data-source="yearly" data-row-key="year">
+        <thead>
+          <tr class="grp"><th></th><th class="n" colspan="9">最大震度別の回数</th><th></th><th></th></tr>
+          <tr>
+            <th>年</th>
+            <th class="n" data-field="s1">1</th>
+            <th class="n" data-field="s2">2</th>
+            <th class="n" data-field="s3">3</th>
+            <th class="n" data-field="s4">4</th>
+            <th class="n" data-field="s5lower">5弱</th>
+            <th class="n" data-field="s5upper">5強</th>
+            <th class="n" data-field="s6lower">6弱</th>
+            <th class="n" data-field="s6upper">6強</th>
+            <th class="n" data-field="s7">7</th>
+            <th class="n" data-field="total">合計</th>
+            <th>大きな地震（最大震度6弱以上）：発生日・震央地名・マグニチュード・最大震度</th>
+          </tr>
+        </thead>
+        <tbody data-draw="rows"></tbody>
+      </table>
+    </div>
+    <p class="muted">※の年（1990〜1996年）は、震度の階級が今と違います（震度5と6を「弱・強」に分けていません。1996年10月から今の階級）。この表では気象庁データベースの数え方どおり、旧階級の震度5を「5弱」、震度6を「6弱」の列に入れています。</p>
+    <p class="muted">太字の名前は、気象庁が名称を定めた地震です。地震の名前は一連の地震活動全体を指します。1993年の北海道南西沖地震は、観測された最大震度が5（旧階級）のため、この表の「大きな地震」には入っていません。</p>
+  </section>
+
+  <details id="notes">
+    <summary>この数字を読むときの注意</summary>
+    <ul>
+      <li>回数は気象庁の震度データベースで、年ごと・最大震度ごとに数えた値です。大きな地震のあとは余震も数えるため、その年の回数が大きく増えます。</li>
+      <li>気象庁は、2000年の多さを新島・神津島近海の地震活動、2011年を東北地方太平洋沖地震、2016年を熊本地震、2024年を能登半島地震によるものとしています。</li>
+      <li>震度を観測する地点の数は年によって違います。特に1997年11月から地方公共団体などの震度計のデータも使われるようになり、観測点が大きく増えました。気象庁も、震度1以上の回数を比べるときは観測点が増えたことを考える必要があるとしています。グラフの破線の前と後で比べるときは、この点に気をつけてください。</li>
+      <li>1996年9月までは震度の階級が今と違い、震度5・6を「弱・強」に分けていませんでした。また、震度7は現地の調査で決めていました（1995年の兵庫県南部地震の震度7はこの方法によるものです）。</li>
+      <li>データベースの値は、再調査で後から修正されることがあります。そのため、毎年1月の気象庁の報道発表の回数と少し違う年があります。</li>
+      <li>{{END_YEAR}}年は、データベースに収録されている<span data-draw="through2" data-source="yearly" data-field="period" data-where="year={{END_YEAR}}">—</span>の数です。</li>
+    </ul>
+  </details>
+</div>
+<script>
+window.eqfmt = d3.format(',');
+dash.calc('summary', {
+  inputs: ['yearly', 'big'],
+  title: '合計・最多の年・大きな地震の数',
+  description: '年別回数の合計、回数が最も多い年とその回数、最大震度6弱以上の地震の数',
+  fn: (yearly, big) => {
+    if (!yearly.length) return [];
+    const total = d3.sum(yearly, (r) => +r.total);
+    const top = yearly.reduce((a, r) => (+r.total > +a.total ? r : a));
+    return [{ total, max_year: +top.year, max_count: +top.total, big_count: big.length }];
+  },
+});
+</script>
+<script>
+const fmt = window.eqfmt;
+const one = (field, f) => (el) => {
+  const s = dash.data('summary');
+  if (s.status !== 'ok' || !s.data || !s.data.length) { el.textContent = '—'; return; }
+  el.textContent = f(s.data[0][field]);
+};
+dash.draw('total', one('total', fmt));
+dash.draw('maxyear', one('max_year', String));
+dash.draw('maxcount', one('max_count', fmt));
+dash.draw('bigcount', one('big_count', fmt));
+const through = (el) => {
+  const d = dash.data('yearly');
+  const r = d.status === 'ok' ? d.data.find((x) => x.year === '{{END_YEAR}}') : null;
+  if (!r) { el.textContent = '—'; return; }
+  const end = r.period.split('〜')[1];
+  const [y, m, dd] = end.split('-').map(Number);
+  el.textContent = `${y}年${m}月${dd}日`;
+};
+dash.draw('through', through);
+dash.draw('through2', through);
+dash.draw('swatch', (el) => { el.style.background = dash.colors[0]; });
+</script>
+<script>
+dash.draw('chart', (el) => {
+  const d = dash.data('yearly');
+  el.replaceChildren();
+  if (d.status !== 'ok') {
+    el.textContent = d.status === 'error' ? '読み込めませんでした' : '—';
+    return;
+  }
+  const fmt = window.eqfmt;
+  const rows = d.data.map((r) => ({ ...r, y: +r.year, t: +r.total }));
+  const W = Math.max(280, el.clientWidth), H = W < 520 ? 280 : 340;
+  const narrow = W < 640;
+  const m = { top: 30, right: 8, bottom: 28, left: 8 };
+  const svg = d3.select(el).append('svg')
+    .attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('role', 'img')
+    .attr('aria-label', '1990年から{{END_YEAR}}年までの、震度1以上を観測した地震の年ごとの回数の棒グラフ');
+  const yMax = d3.max(rows, (r) => r.t);
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([H - m.bottom, m.top]);
+  const yAxis = svg.append('g');
+  yAxis.call(d3.axisLeft(y).ticks(5).tickFormat(fmt).tickSize(0));
+  let wMax = 0;
+  yAxis.selectAll('text').each(function () { wMax = Math.max(wMax, this.getComputedTextLength()); });
+  m.left = wMax + 10;
+  yAxis.attr('transform', `translate(${m.left - 4},0)`).select('.domain').remove();
+  const x = d3.scaleBand().domain(rows.map((r) => r.year)).range([m.left, W - m.right]).padding(0.18);
+  svg.insert('g', ':first-child').selectAll('line').data(y.ticks(5)).join('line')
+    .attr('x1', m.left).attr('x2', W - m.right).attr('y1', (v) => y(v)).attr('y2', (v) => y(v))
+    .style('stroke', 'var(--cds-chart-grid)');
+  const step = narrow ? 5 : 2;
+  const xa = svg.append('g').attr('transform', `translate(0,${H - m.bottom})`)
+    .call(d3.axisBottom(x).tickValues(rows.map((r) => r.year).filter((v) => (+v - 1990) % step === 0)).tickSize(3));
+  xa.select('.domain').style('stroke', 'var(--cds-chart-axis)');
+  xa.selectAll('line').style('stroke', 'var(--cds-chart-axis)');
+  const bars = svg.append('g').selectAll('rect').data(rows).join('rect')
+    .attr('x', (r) => x(r.year)).attr('width', x.bandwidth())
+    .attr('y', (r) => y(r.t)).attr('height', (r) => y(0) - y(r.t))
+    .style('fill', dash.colors[0]);
+  // 1997年11月から地方公共団体などの震度計のデータも使用（気象庁の注記）
+  if (x('1998') !== undefined) {
+    const xr = x('1998') - (x.step() * x.paddingInner()) / 2;
+    svg.append('line').attr('x1', xr).attr('x2', xr).attr('y1', m.top).attr('y2', H - m.bottom)
+      .style('stroke', 'var(--cds-chart-reference)').style('stroke-dasharray', '4 3');
+    const lt = svg.append('text').attr('text-anchor', 'end').attr('x', xr - 4).attr('y', y(0) - 70).style('font-size', '10px');
+    lt.append('tspan').attr('x', xr - 4).text('震度計の追加');
+    lt.append('tspan').attr('x', xr - 4).attr('dy', '1.2em').text('1997年11月');
+  }
+  // 震度7を観測した年
+  svg.append('g').selectAll('text').data(rows.filter((r) => +r.s7 > 0)).join('text')
+    .attr('class', 's7lab').attr('text-anchor', 'middle')
+    .attr('x', (r) => x(r.year) + x.bandwidth() / 2).attr('y', (r) => y(r.t) - 5)
+    .text(x.step() >= 48 ? '▲震度7' : '▲');
+  // 回数を棒の上に（棒の幅が数字より広いときだけ。震度7の年は印の上）
+  if (x.bandwidth() >= 30) {
+    svg.append('g').selectAll('text').data(rows).join('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', (r) => x(r.year) + x.bandwidth() / 2)
+      .attr('y', (r) => y(r.t) - (+r.s7 > 0 ? 19 : 5))
+      .style('font-size', '10px')
+      .text((r) => fmt(r.t));
+  }
+  const tip = d3.select(el).append('div').attr('class', 'tip').style('display', 'none');
+  const show = (ev, r) => {
+    tip.node().replaceChildren();
+    tip.append('div').append('b').text(`${r.year}年　${fmt(r.t)}回`);
+    const lab = [['s7', '震度7'], ['s6upper', '6強'], ['s6lower', '6弱'], ['s5upper', '5強'], ['s5lower', '5弱'], ['s4', '4'], ['s3', '3'], ['s2', '2'], ['s1', '1']];
+    lab.forEach(([k, l]) => tip.append('div').text(`最大震度${l.startsWith('震度') ? l.slice(2) : l}：${fmt(+r[k])}回`));
+    if (r.year === '{{END_YEAR}}') tip.append('div').text(`（${+r.period.split('〜')[1].slice(5, 7)}月${+r.period.split('〜')[1].slice(8, 10)}日まで）`);
+    tip.style('display', 'block');
+    const [px, py] = d3.pointer(ev, el);
+    const tw = tip.node().offsetWidth, th = tip.node().offsetHeight;
+    tip.style('left', `${Math.min(Math.max(0, px - tw / 2), el.clientWidth - tw)}px`)
+       .style('top', `${Math.max(0, py - th - 12)}px`);
+    bars.style('opacity', (b) => (b === r ? 1 : 0.55));
+  };
+  const hide = () => { tip.style('display', 'none'); bars.style('opacity', 1); };
+  bars.on('pointerenter pointermove', show).on('pointerleave', hide)
+    .on('click', (ev, r) => { if (window.eqMapGoto) window.eqMapGoto(+r.year); })
+    .style('cursor', 'pointer');
+});
+</script>
+<script>
+dash.draw('rows', (tb) => {
+  const d = dash.data('yearly'), b = dash.data('big');
+  tb.replaceChildren();
+  if (d.status !== 'ok') return;
+  const fmt = window.eqfmt;
+  const byYear = d3.group(b.status === 'ok' ? b.data : [], (r) => r.year);
+  const cols = ['s1', 's2', 's3', 's4', 's5lower', 's5upper', 's6lower', 's6upper', 's7', 'total'];
+  d.data.forEach((r) => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = r.year;
+    const yc = document.createElement('td');
+    yc.className = 'yr';
+    yc.textContent = (r.year === '{{END_YEAR}}' ? `${r.year}（${+r.period.split('〜')[1].slice(5, 7)}月${+r.period.split('〜')[1].slice(8, 10)}日まで）` : r.year) + (r.intensity_scale !== '現行' ? '※' : '');
+    tr.appendChild(yc);
+    cols.forEach((k) => {
+      const td = document.createElement('td');
+      const v = +r[k];
+      td.className = 'n' + (k === 'total' ? ' tot' : v === 0 ? ' zero' : ['s6lower', 's6upper', 's7'].includes(k) ? ' strong' : '');
+      td.textContent = fmt(v);
+      tr.appendChild(td);
+    });
+    const bc = document.createElement('td');
+    bc.className = 'big';
+    const ev = (byYear.get(r.year) || []).slice().sort((p, q) => d3.ascending(p.datetime, q.datetime));
+    if (!ev.length) { bc.textContent = b.status === 'ok' ? 'なし' : '—'; }
+    ev.forEach((e) => {
+      const line = document.createElement('div');
+      const [ymd, hm] = e.datetime.split(' ');
+      const [, mo, da] = ymd.split('/').map(Number);
+      const s = document.createElement('span');
+      s.textContent = `${mo}月${da}日 ${hm}　${e.epicenter}　M${e.magnitude}　`;
+      const mi = document.createElement('span');
+      mi.textContent = e.max_intensity === '6' ? '震度6（旧階級）' : `震度${e.max_intensity}`;
+      mi.dataset.source = 'big'; mi.dataset.field = 'max_intensity'; mi.dataset.where = `id=${e.id}`;
+      if (e.max_intensity === '7') mi.className = 'i7';
+      line.append(s, mi);
+      if (e.jma_name) {
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = `　${e.jma_name}`;
+        nm.dataset.source = 'big'; nm.dataset.field = 'jma_name'; nm.dataset.where = `id=${e.id}`;
+        line.append(nm);
+      }
+      bc.appendChild(line);
+    });
+    tr.appendChild(bc);
+    tb.appendChild(tr);
+  });
+});
+</script>
+</div>
+<footer class="site-foot">
+  <p>出典：気象庁ホームページ「<a href="https://www.data.jma.go.jp/eqdb/data/shindo/index.php">震度データベース検索</a>」（{{FETCHED_JA}}取得、1990年1月1日〜{{END_DATE_JA}}）を加工して作成。地震の名称は気象庁「<a href="https://www.jma.go.jp/jma/kishou/know/meishou/meishou_ichiran.html">気象庁が名称を定めた気象・地震・火山現象一覧</a>」による。</p>
+  <p>地図の陸地：<a href="https://www.naturalearthdata.com/">Natural Earth</a> 1:50m（パブリックドメイン）。グラフ：<a href="https://d3js.org/">D3.js</a> v7.9.0（ISCライセンス）。元のデータファイルは <a href="data/yearly.csv">yearly.csv</a>・<a href="data/big.csv">big.csv</a>・<a href="data/japan_land.json">japan_land.json</a> です。</p>
+</footer>
+</body>
+</html>

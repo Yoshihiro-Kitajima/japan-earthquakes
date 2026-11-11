@@ -1,0 +1,40 @@
+name: 気象庁データの週1回更新
+
+on:
+  schedule:
+    - cron: '17 18 * * 0'   # 毎週月曜 3時17分（日本時間）
+  workflow_dispatch:         # GitHub の画面から手動でも動かせる
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 震度データベースから取り直す
+        run: python scripts/update_data.py
+      - name: 変わっていれば保存して公開ページを作り直す
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "変更なし"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "気象庁 震度データベースから更新（$(TZ=Asia/Tokyo date +%Y-%m-%d)）"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Pages の作り直しは自動で始まります"
