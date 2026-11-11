@@ -49,11 +49,11 @@ def post(fields):
         return json.load(r)
 
 
-def query(end, max_int, count):
-    fields = [('mode', 'search'), ('dateTimeF[]', START), ('dateTimeF[]', '00:00'), ('dateTimeT[]', end), ('dateTimeT[]', '23:59'),
+def query(start, end, max_int, count, comp='C0'):
+    fields = [('mode', 'search'), ('dateTimeF[]', start), ('dateTimeF[]', '00:00'), ('dateTimeT[]', end), ('dateTimeT[]', '23:59'),
               ('mag[]', '0.0'), ('mag[]', '9.9'), ('dep[]', '000'), ('dep[]', '999'), ('epi[]', '99'), ('pref[]', '99'),
               ('city[]', '99'), ('station[]', '99'), ('obsInt', '1'), ('maxInt', max_int), ('additionalC', 'false'),
-              ('Sort', 'S0'), ('Comp', 'C0'), ('seisCount', 'true' if count else 'false'), ('observed', 'false')]
+              ('Sort', 'S0'), ('Comp', comp), ('seisCount', 'true' if count else 'false'), ('observed', 'false')]
     r = post(fields)
     if not isinstance(r.get('res'), list):
         fail(f'データベースの応答が想定と違います: {r.get("res")!r}')
@@ -64,11 +64,27 @@ def scale(y):
     return '旧階級' if y <= 1995 else ('1〜9月は旧階級、10月から現行' if y == 1996 else '現行')
 
 
-def build_yearly(res, end):
-    rows = [r for r in res if r.get('lb') != '合計']
-    total = next((r for r in res if r.get('lb') == '合計'), None)
-    if total is None:
-        fail('年別回数に「合計」の行がありません')
+def query_yearly(end):
+    """年別回数は1回の検索で30年までなので、25年ずつに分けて取り、それぞれ「合計」の行と照らし合わせる"""
+    rows = []
+    y0, end_year = int(START[:4]), int(end[:4])
+    while y0 <= end_year:
+        y1 = min(y0 + 24, end_year)
+        s, e = f'{y0}-01-01', (end if y1 == end_year else f'{y1}-12-31')
+        res = query(s, e, '1', True, comp='C3')['res']
+        part = [r for r in res if r.get('lb') != '合計']
+        total = next((r for r in res if r.get('lb') == '合計'), None)
+        if total is None:
+            fail(f'{s}〜{e} の年別回数に「合計」の行がありません')
+        for k in KEYS + ['SS']:
+            if sum(int(r[k]) for r in part) != int(total[k]):
+                fail(f'{s}〜{e} の {k} の年の合計が「合計」の行と合いません')
+        rows += part
+        y0 = y1 + 1
+    return rows
+
+
+def build_yearly(rows, end):
     end_year = int(end[:4])
     years = [int(r['lb'].rstrip('年')) for r in rows]
     if years != list(range(1990, end_year + 1)):
@@ -81,9 +97,6 @@ def build_yearly(res, end):
             fail(f'{y}年の最大震度別の合計が全体の数と合いません')
         per = f'{y}-01-01〜{end}' if y == end_year else f'{y}-01-01〜{y}-12-31'
         out.append([y] + vals + [int(r['SS']), per, scale(y)])
-    for i, k in enumerate(KEYS + ['SS']):
-        if sum(int(r[k]) for r in rows) != int(total[k]):
-            fail(f'{k} の年の合計が「合計」の行と合いません')
     return out
 
 
@@ -121,10 +134,10 @@ def main():
     fetched = datetime.datetime.now(JST).date().isoformat()
     print(f'データベース収録の最終日: {end}　取得日: {fetched}')
 
-    yr = query(end, '1', True)
-    big = query(end, 'C', False)
+    yr_rows = query_yearly(end)
+    big = query(START, end, 'C', False)
     named = json.loads((DATA / 'named.json').read_text(encoding='utf-8'))
-    yearly = build_yearly(yr['res'], end)
+    yearly = build_yearly(yr_rows, end)
     bigrows = build_big(big['res'], named)
 
     # 年ごとの「6弱以上」の数と一覧の件数が合うか
