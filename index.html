@@ -236,7 +236,7 @@ dash.draw('mapyearlegend', (el) => {
   d3.range(0, 1.0001, 0.1).forEach((t) => gr.append('stop').attr('offset', t).attr('stop-color', d3.interpolateViridis(t)));
   svg.append('rect').attr('x', 14).attr('y', 3).attr('width', W - 28).attr('height', 10).attr('fill', 'url(#eq-year-grad)');
   const x = d3.scaleLinear().domain([1990, 2026]).range([14, W - 14]);
-  [1990, 2000, 2010, 2020, 2026].forEach((v) => svg.append('text').attr('x', x(v)).attr('y', 28)
+  [...new Set([1990, 2000, 2010, 2020, 2026])].forEach((v) => svg.append('text').attr('x', x(v)).attr('y', 28)
     .attr('text-anchor', 'middle').style('font-size', '11px').style('fill', 'var(--cds-text-secondary)').text(v));
 });
 </script>
